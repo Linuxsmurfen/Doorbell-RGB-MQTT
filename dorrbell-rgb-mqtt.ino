@@ -30,18 +30,17 @@ const int blueLed = 16;       // the number of the LED pin
 
 //--------- DO NOT CHANGE BELOW -------------------------------
                                                                                             
-//ClickButton button1(buttonPin, LOW, CLICKBTN_PULLUP);
 ClickButton button1(buttonPin, HIGH);
-//int value = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 char msg[5];
 
-int ledState = 0;
+int period = 2000;
 int redState =   1023-(4*0);
 int greenState = 1023-(4*0);
 int blueState =  1023-(4*128);
+
 
 
 //---- Wifi setup -----------------
@@ -143,11 +142,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print("test");
   }
 
-  // Set RGB, hardcoded for now
-  ledState = 1;
-  redState =   1023-(4*0);
-  greenState = 1023-(4*0);
-  blueState =  1023-(4*128);
 }
 
 
@@ -170,32 +164,12 @@ void loop() {
     client.publish(mqttput, msg);
   }
 
-  //long now = millis();
-  //if (now - lastMsg > 2000) {
-  //  lastMsg = now;
-  //  ++value;
-  //  snprintf (msg, 50, "hello world #%ld", value);
-  //  Serial.print("Publish message: ");
-  //  Serial.println(msg);
-  //  client.publish(mqttput, msg);
-  //}
-
-  // increase the LED brightness
-  //for(int dutyCycle = 0; dutyCycle < (255*4); dutyCycle++){   
-  //  // changing the LED brightness with PWM
-  //  analogWrite(blueLed, dutyCycle);
-  //  delay(2);
-  //}
-
-  // decrease the LED brightness
-  //for(int dutyCycle = (255*4); dutyCycle > 0; dutyCycle--){
-  //  // changing the LED brightness with PWM
-  //  analogWrite(blueLed, dutyCycle);
-  //  delay(0.5);
-  //}
+ 
+  // Update the leds
+  blueState = 512+511*cos(2*PI/period*millis());
 
   analogWrite(redLed, redState);
-  analogWrite(greenLed, blueState);
-  analogWrite(blueLed, greenState);
+  analogWrite(greenLed, greenState);
+  analogWrite(blueLed, blueState);
  
 }
