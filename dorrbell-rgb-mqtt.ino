@@ -15,10 +15,10 @@
 
 // Update these with values suitable for your network.
 
-const char* ssid = ".......";
-const char* password = ".............";
+const char* ssid = "........";
+const char* password = ".........";
 
-const char* mqtt_server = "test.mosquitto.org";
+const char* mqtt_server = "............";
 const char* mqttput = "doorbell/button";
 const char* mqttget = "doorbell/led/#";
 
@@ -30,15 +30,21 @@ const int blueLed = 16;       // the number of the LED pin
 
 //--------- DO NOT CHANGE BELOW -------------------------------
                                                                                             
-ClickButton button1(buttonPin, LOW, CLICKBTN_PULLUP);
-int value = 0;
+//ClickButton button1(buttonPin, LOW, CLICKBTN_PULLUP);
+ClickButton button1(buttonPin, HIGH);
+//int value = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 char msg[5];
 
+int ledState = 0;
+int redState =   1023-(4*0);
+int greenState = 1023-(4*0);
+int blueState =  1023-(4*128);
 
 
+//---- Wifi setup -----------------
 void setup_wifi() {
 
   delay(10);
@@ -63,44 +69,9 @@ void setup_wifi() {
 }
 
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived: [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
 
 
-  if (topic == "doorbell/led/R") {
-    Serial.print("test");
-  }
-
-  // LED RED
-  if ((char)payload[0] == '1') {
-    digitalWrite(redLed, LOW);
-  } else {
-    digitalWrite(redLed, HIGH);
-  }
-
-  // LED GREEN
-  if ((char)payload[1] == '1') {
-    digitalWrite(greenLed, LOW); 
-  } else {
-    digitalWrite(greenLed, HIGH);
-  }
-
-  // LED BLUE
-  if ((char)payload[2] == '1') {
-    digitalWrite(blueLed, LOW);
-  } else {
-    digitalWrite(blueLed, HIGH);
-  }
-
-}
-
-
+//---- Reconnect -----------------
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
@@ -115,7 +86,7 @@ void reconnect() {
       // Once connected, publish an announcement...
       client.publish(mqttput, "Connected!");
       
-      // ... and resubscribe
+      // ... and re-subscribe
       client.subscribe(mqttget);
       
     } else {
@@ -129,6 +100,10 @@ void reconnect() {
 }
 
 
+
+
+
+//---- Setup everything -----------------
 void setup() {
   Serial.begin(115200);
   setup_wifi();
@@ -144,20 +119,56 @@ void setup() {
   digitalWrite(greenLed, HIGH);
   digitalWrite(blueLed, HIGH);
 
-
   // Setup button timers (all in milliseconds / ms)
   button1.debounceTime   = 20;   // Debounce timer in ms
-  button1.multiclickTime = 250;  // Time limit for multi clicks
+  button1.multiclickTime = 350;  // Time limit for multi clicks
   button1.longClickTime  = 1000; // time until "held-down clicks" register
 }
 
 
+
+
+
+//---- Parse the mqtt message -------------
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived: [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  if (topic == "doorbell/led/R") {
+    Serial.print("test");
+  }
+
+  // Set RGB, hardcoded for now
+  ledState = 1;
+  redState =   1023-(4*0);
+  greenState = 1023-(4*0);
+  blueState =  1023-(4*128);
+}
+
+
+
+
+//---- The main loop -----------------
 void loop() {
 
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
+
+  // Update and check button state
+  button1.Update();
+  if (button1.clicks != 0) {
+    snprintf (msg, 5, "%ld", button1.clicks);
+    Serial.print("Button: ");
+    Serial.println(msg);
+    client.publish(mqttput, msg);
+  }
 
   //long now = millis();
   //if (now - lastMsg > 2000) {
@@ -169,33 +180,22 @@ void loop() {
   //  client.publish(mqttput, msg);
   //}
 
-
-
   // increase the LED brightness
-  for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++){   
-    // changing the LED brightness with PWM
-    analogWrite(blueLed, dutyCycle);
-    delay(1);
-  }
+  //for(int dutyCycle = 0; dutyCycle < (255*4); dutyCycle++){   
+  //  // changing the LED brightness with PWM
+  //  analogWrite(blueLed, dutyCycle);
+  //  delay(2);
+  //}
 
   // decrease the LED brightness
-  for(int dutyCycle = 1023; dutyCycle > 0; dutyCycle--){
-    // changing the LED brightness with PWM
-    analogWrite(blueLed, dutyCycle);
-    delay(1);
-  }
+  //for(int dutyCycle = (255*4); dutyCycle > 0; dutyCycle--){
+  //  // changing the LED brightness with PWM
+  //  analogWrite(blueLed, dutyCycle);
+  //  delay(0.5);
+  //}
 
-
-  
-
-  // Update button state
-  button1.Update();
-  value = button1.clicks;
-  if(value != 0) {
-    snprintf (msg, 5, "%ld", value);
-    Serial.print("Button: ");
-    Serial.println(msg);
-    client.publish(mqttput, msg);
-  }
-  
+  analogWrite(redLed, redState);
+  analogWrite(greenLed, blueState);
+  analogWrite(blueLed, greenState);
+ 
 }
