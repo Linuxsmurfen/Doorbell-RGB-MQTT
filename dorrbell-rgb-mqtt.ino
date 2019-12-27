@@ -36,12 +36,11 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 char msg[5];
 
-int period = 2000;
-int redState =   1023-(4*0);
-int greenState = 1023-(4*0);
-int blueState =  1023-(4*128);
-
-
+int freq = 2000;                 // freq, 0=off, 2000=1 per sek
+int redState =   1023;           // 0=off, 1023=max light
+int greenState = 0;
+int blueState =  500;
+double cosValue = 0;
 
 //---- Wifi setup -----------------
 void setup_wifi() {
@@ -155,7 +154,7 @@ void loop() {
   }
   client.loop();
 
-  // Update and check button state
+  // Check button state
   button1.Update();
   if (button1.clicks != 0) {
     snprintf (msg, 5, "%ld", button1.clicks);
@@ -165,11 +164,16 @@ void loop() {
   }
 
  
-  // Update the leds
-  blueState = 512+511*cos(2*PI/period*millis());
-
-  analogWrite(redLed, redState);
-  analogWrite(greenLed, greenState);
-  analogWrite(blueLed, blueState);
- 
+  // Update RGB leds
+  if (freq == 0) {
+    analogWrite(redLed, redState);
+    analogWrite(greenLed, greenState);
+    analogWrite(blueLed, blueState);
+  } else {
+    cosValue = cos(2*PI/freq*millis());
+    analogWrite(redLed,   (1023-redState/2)  + (redState/2)  * cosValue);
+    analogWrite(blueLed,  (1023-blueState/2) + (blueState/2) * cosValue);
+    analogWrite(greenLed, (1023-greenState/2)+ (greenState/2)* cosValue);
+  }
+  
 }
