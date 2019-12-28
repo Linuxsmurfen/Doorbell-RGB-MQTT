@@ -25,3 +25,11 @@ Default topic "doorbell/button"
 | doorbell/led/G | Set green led between 0-1023 (0=off) | 0 |
 | doorbell/led/B | Set blue led between 0-1023 (0=off) | 500 |
 | doorbell/led/Freq | Set blink freq between 0-5000  (0=off) | 2000 |
+
+
+## Bill of materials
+
+| Description | Link |
+| --- | --- |
+| Rugged Metal Pushbutton - 22mm 6V RGB Momentary | https://www.adafruit.com/product/3423 |
+| Adafruit HUZZAH ESP8266 Breakout | https://www.adafruit.com/product/2471 |
