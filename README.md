@@ -36,3 +36,8 @@ Default topic "doorbell/button"
 | Adafruit HUZZAH ESP8266 Breakout | https://www.adafruit.com/product/2471 |
 | Resistor - 150Ω | |
 | Resistor - 470kΩ | |
+
+
+## Schematic
+
+![schematic picture](/Schematic_doorbell-rgb-mqtt.png)
