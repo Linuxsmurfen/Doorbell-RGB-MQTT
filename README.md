@@ -1,7 +1,8 @@
 # Doorbell-RGB-MQTT
 
 Wifi connected doorbell using a esp8266.
-Uses mqtt to update led status and notify when button is pressed
+Uses mqtt to update led status and notify when button is pressed.
+It has dual switches so one will be used to replace the existing button while the other will be connected to the esp8266.
 
 ![Doorbell picture](/doorbell-rgb-mqtt.jpg)
 
