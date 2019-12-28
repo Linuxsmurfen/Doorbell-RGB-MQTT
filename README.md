@@ -34,3 +34,5 @@ Default topic "doorbell/button"
 | --- | --- |
 | Rugged Metal Pushbutton - 22mm 6V RGB Momentary | https://www.adafruit.com/product/3423 |
 | Adafruit HUZZAH ESP8266 Breakout | https://www.adafruit.com/product/2471 |
+| Resistor - 150Ω | |
+| Resistor - 470kΩ | |
