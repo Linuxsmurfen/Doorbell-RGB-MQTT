@@ -5,25 +5,24 @@
  Notify via MQTT when button is pushed.
 
  Created by Linuxsmurfen
- Date: 2019-12-26
+ Date: 2020-01-02
 
 */
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <ClickButton.h>           // https://github.com/marcobrianza/ClickButton
+#include <ClickButton.h>      // https://github.com/marcobrianza/ClickButton
 
 // Update these with values suitable for your network.
 
-const char* ssid = "........";
+const char* ssid = "..............";
 const char* password = ".........";
 
-const char* mqtt_server = "..........";
+const char* mqtt_server = "............";
 const char* mqttput =   "doorbell/button";
-const char* mqttRed =   "doorbell/led/R";
-const char* mqttGreen = "doorbell/led/G";
-const char* mqttBlue =  "doorbell/led/B";
+const char* mqttRGB =   "doorbell/led/rgb";
 const char* mqttFreq =  "doorbell/led/Freq";
+
 
 const int buttonPin = 12;     // the number of the pushbutton pin
 const int redLed = 13;        // the number of the LED pin
@@ -42,7 +41,6 @@ int freq = 2000;                 // Blink freq 0-5000  (0=off)
 int redState =   1023;           // Red light 0-1023 (0=off)
 int greenState = 0;              // Green light 0-1023 (0=off)
 int blueState =  500;            // Blue light 0-1023 (0=off)
-
 
 
 
@@ -89,10 +87,9 @@ void reconnect() {
       client.publish(mqttput, "Connected!");
       
       // ... and subscribe
-      client.subscribe(mqttRed);
-      client.subscribe(mqttGreen);
-      client.subscribe(mqttBlue);
       client.subscribe(mqttFreq);
+      client.subscribe(mqttRGB);
+      
       
     } else {
       Serial.print("failed, rc=");
@@ -133,12 +130,9 @@ void setup() {
 
 
 
-
 //---- Parse the mqtt message -------------
-//Message arrived: [doorbell/led/R] 255
-//Message arrived: [doorbell/led/G] 255
-//Message arrived: [doorbell/led/B] 255
-//Message arrived: [doorbell/led/Freq] 2000
+//Message arrived: [doorbell/led/freq] 2000
+//Message arrived: [doorbell/led/rgb] 235,134,235
 
 void callback(char* topic, byte* payload, unsigned int length) {
   
@@ -150,28 +144,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
-  
+
   //Convert paylod to integer
   payload[length] = '\0';
   String s = String((char*)payload);
   int i = s.toInt();
 
-  // Set value depending on topic
-  if (strcmp(topic,mqttRed)==0) {
-    if ((i>=0) && (i<1024)) { redState = i; }
-  }
-  
-  if (strcmp(topic,mqttGreen)==0) {
-    if ((i>=0) && (i<1024)) { greenState = i; }
-  }
-
-  if (strcmp(topic,mqttBlue)==0) {
-    if ((i>=0) && (i<1024)) { blueState = i; }
-  }
-
+  // Set the freq
   if (strcmp(topic,mqttFreq)==0) {
     if ((i>=0) && (i<5001)) { freq = i; }
   }
+
+  //Set the RGB values 
+  if (strcmp(topic,mqttRGB)==0) {
+    char *p = (char*)payload;
+    char *tok;
+    tok = strtok(p, ",");
+    redState = atoi(tok) * 4;
+    tok = strtok(NULL, ",");
+    if (tok != NULL) {
+      greenState = atoi(tok) * 4;
+      tok = strtok(NULL, ",");
+      if (tok != NULL) {
+          blueState = atoi(tok) * 4;
+      }
+    }
+  }
+
 
   // Print values
   Serial.print("Red: "); Serial.print(redState); Serial.println();
