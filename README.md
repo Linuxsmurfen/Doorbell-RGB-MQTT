@@ -26,6 +26,29 @@ Default topic "doorbell/button"
 | doorbell/led/rgb | Set the RGB led 0-255,0-255,0-255 (0=off) | 255,0,125 |
 | doorbell/led/Freq | Set blink freq between 0-5000  (0=off) | 2000 |
 
+## Integration with Home Assistant
+Example: 
+- Button pressed for a long time
+~~~
+binary_sensor:
+  - platform: mqtt
+    name: "Doorbell"
+    state_topic: "doorbell/button"
+    payload_on: "-1"
+    off_delay: 10
+    device_class: occupancy
+~~~
+
+- Set the color
+~~~
+light:
+  - platform: mqtt
+    name: "Doorbell"
+    command_topic: "doorbell/led"
+    rgb_command_topic: "doorbell/led/rgb"
+    white_value_command_topic: "doorbell/led/Freq"
+    white_value_scale: 5000
+~~~
 
 ## Bill of materials
 
