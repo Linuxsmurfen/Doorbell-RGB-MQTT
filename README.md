@@ -48,6 +48,8 @@ light:
     rgb_command_topic: "doorbell/led/rgb"
     white_value_command_topic: "doorbell/led/Freq"
     white_value_scale: 5000
+    effect_command_topic: "doorbell/led"
+    effect_list: [fixed,flash]
 ~~~
 
 ## Bill of materials
