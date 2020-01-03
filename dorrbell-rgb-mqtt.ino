@@ -5,21 +5,24 @@
  Notify via MQTT when button is pushed.
 
  Created by Linuxsmurfen
- Date: 2020-01-02
+ Date: 2020-01-03
 
 */
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ClickButton.h>      // https://github.com/marcobrianza/ClickButton
+#include <arduino_secrets.h>  // Includes the SECRET_* stuff
+
 
 // Update these with values suitable for your network.
 
-const char* ssid = "..............";
-const char* password = ".........";
+const char* ssid = SECRET_SSID;
+const char* password = SECRET_PW;
 
-const char* mqtt_server = "............";
+const char* mqtt_server = "192.168.1.200";
 const char* mqttput =   "doorbell/button";
+const char* mqttLed =   "doorbell/led";
 const char* mqttRGB =   "doorbell/led/rgb";
 const char* mqttFreq =  "doorbell/led/Freq";
 
@@ -37,11 +40,12 @@ PubSubClient client(espClient);
 ClickButton button1(buttonPin, HIGH);
 char msg[5];
 double cosValue = 0;
-int freq = 2000;                 // Blink freq 0-5000  (0=off)
+int ledFreq = 2000;              // Blink freq 0-5000  (0=off)
 int redState =   1023;           // Red light 0-1023 (0=off)
 int greenState = 0;              // Green light 0-1023 (0=off)
 int blueState =  500;            // Blue light 0-1023 (0=off)
-
+boolean ledState = true;         // Led status (true=on)
+const int highLed = 1023;        // Max analog value
 
 
 //---- Wifi setup -----------------
@@ -87,6 +91,7 @@ void reconnect() {
       client.publish(mqttput, "Connected!");
       
       // ... and subscribe
+      client.subscribe(mqttLed);
       client.subscribe(mqttFreq);
       client.subscribe(mqttRGB);
       
@@ -136,7 +141,7 @@ void setup() {
 
 void callback(char* topic, byte* payload, unsigned int length) {
   
-  //Print topic and payload
+  // Print topic and payload
   Serial.print("Message arrived: [");
   Serial.print(topic);
   Serial.print("] ");
@@ -145,17 +150,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
-  //Convert paylod to integer
+  // Convert payload to string and integer
   payload[length] = '\0';
   String s = String((char*)payload);
   int i = s.toInt();
 
-  // Set the freq
+  // Led Topic
+  if (strcmp(topic,mqttLed)==0) {
+    if (s == "ON" )  {ledState = true;  }
+    if (s == "OFF")  {ledState = false; }
+    if (s == "fixed") {ledFreq = 0; }
+    if (s == "flash") {ledFreq = 300; }
+  }
+  
+  // Freq Topic
   if (strcmp(topic,mqttFreq)==0) {
-    if ((i>=0) && (i<5001)) { freq = i; }
+    if ((i>=0) && (i<5001)) { ledFreq = i; }
   }
 
-  //Set the RGB values 
+  // RGB Topic 
   if (strcmp(topic,mqttRGB)==0) {
     char *p = (char*)payload;
     char *tok;
@@ -176,7 +189,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Red: "); Serial.print(redState); Serial.println();
   Serial.print("Green: "); Serial.print(greenState); Serial.println();
   Serial.print("Blue: "); Serial.print(blueState); Serial.println();
-  Serial.print("Freq: "); Serial.print(freq); Serial.println();
+  Serial.print("Freq: "); Serial.print(ledFreq); Serial.println();
+  Serial.print("Led: "); Serial.print(ledState); Serial.println();
 }
 
 
@@ -199,16 +213,23 @@ void loop() {
     client.publish(mqttput, msg);
   }
 
-  // Update RGB leds
-  if (freq == 0) {
-    analogWrite(redLed, 1023-redState);
-    analogWrite(greenLed, 1023-greenState);
-    analogWrite(blueLed, 1023-blueState);
+  // Update RGB led
+  if (ledState) {
+    if (ledFreq == 0) {
+      analogWrite(redLed, highLed-redState);
+      analogWrite(greenLed, highLed-greenState);
+      analogWrite(blueLed, highLed-blueState);
+    } else {
+      cosValue = cos(2*PI/ledFreq*millis());
+      analogWrite(redLed, (highLed-redState/2) + (redState/2) * cosValue);
+      analogWrite(blueLed, (highLed-blueState/2) + (blueState/2) * cosValue);
+      analogWrite(greenLed, (highLed-greenState/2) + (greenState/2) * cosValue);
+    }
   } else {
-    cosValue = cos(2*PI/freq*millis());
-    analogWrite(redLed, (1023-redState/2) + (redState/2) * cosValue);
-    analogWrite(blueLed, (1023-blueState/2) + (blueState/2) * cosValue);
-    analogWrite(greenLed, (1023-greenState/2) + (greenState/2) * cosValue);
+      analogWrite(redLed, highLed);
+      analogWrite(greenLed, highLed);
+      analogWrite(blueLed, highLed);
   }
+
   
 } 
