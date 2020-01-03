@@ -27,6 +27,8 @@ Default topic "doorbell/button"
 | doorbell/led/Freq | Set blink freq between 0-5000  (0=off) | 2000 |
 
 ## Integration with Home Assistant
+![homeassistant picture](/homeassistant.png)
+
 Example: 
 - Button pressed for a long time
 ~~~
