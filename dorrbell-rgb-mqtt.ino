@@ -5,11 +5,14 @@
  Notify via MQTT when button is pushed.
 
  Created by Linuxsmurfen
- Date: 2020-01-03
+ Date: 2020-01-04
 
 */
 
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 #include <PubSubClient.h>
 #include <ClickButton.h>      // https://github.com/marcobrianza/ClickButton
 #include <arduino_secrets.h>  // Includes the SECRET_* stuff
@@ -26,11 +29,15 @@ const char* mqttLed =   "doorbell/led";
 const char* mqttRGB =   "doorbell/led/rgb";
 const char* mqttFreq =  "doorbell/led/Freq";
 
+const char* OTAhostname = "doorbell";
+const char* OTApasswd = "1234";
+const int   OTAport = 8266;
 
 const int buttonPin = 12;     // the number of the pushbutton pin
 const int redLed = 13;        // the number of the LED pin
 const int greenLed = 14;      // the number of the LED pin
 const int blueLed = 16;       // the number of the LED pin
+
 
 
 //--------- DO NOT CHANGE BELOW -------------------------------
@@ -57,17 +64,39 @@ void setup_wifi() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.println("Connection Failed! Rebooting...");
+    delay(5000);
+    ESP.restart();
   }
 
-  randomSeed(micros());
+  ArduinoOTA.setPort(OTAport);
+  ArduinoOTA.setHostname(OTAhostname);
+  ArduinoOTA.setPassword(OTApasswd);
 
-  Serial.println("");
-  Serial.println("WiFi connected");
+  ArduinoOTA.onStart([]() {
+    Serial.println("Start");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+ 
+  Serial.println("Ready");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 }
@@ -113,6 +142,7 @@ void reconnect() {
 //---- Setup everything -----------------
 void setup() {
   Serial.begin(115200);
+  Serial.println("Booting");
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
@@ -198,7 +228,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 //---- The main loop -----------------
 void loop() {
-
+  ArduinoOTA.handle();
+  
   if (!client.connected()) {
     reconnect();
   }
