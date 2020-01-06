@@ -15,10 +15,11 @@ Default topic "doorbell/button"
 
 | Value | Description |
 | :---: | --- |
-| -1 | Long click |
-| 1 | Short click |
-| 2 | Short double click |
-| 3 | Short triple click |
+| Clicked:-1 | Long click |
+| Clicked:1 | Short click |
+| Clicked:2 | Short double click |
+| Clicked:3 | Short triple click |
+| Last:-1,2,3 | Last three clicks |
 
 
 ## Set the RGB led via mqtt message topics
