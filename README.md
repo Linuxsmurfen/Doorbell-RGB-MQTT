@@ -41,7 +41,7 @@ binary_sensor:
   - platform: mqtt
     name: "Doorbell"
     state_topic: "doorbell/button"
-    payload_on: "-1"
+    payload_on: "Clicked:-1"
     off_delay: 10
     device_class: occupancy
 ~~~
