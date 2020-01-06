@@ -45,7 +45,7 @@ const int blueLed = 16;       // the number of the LED pin
 WiFiClient espClient;
 PubSubClient client(espClient);
 ClickButton button1(buttonPin, HIGH);
-char msg[5];
+char msg[15];
 double cosValue = 0;
 int ledFreq = 2000;              // Blink freq 0-5000  (0=off)
 int redState =   1023;           // Red light 0-1023 (0=off)
@@ -53,6 +53,7 @@ int greenState = 0;              // Green light 0-1023 (0=off)
 int blueState =  500;            // Blue light 0-1023 (0=off)
 boolean ledState = true;         // Led status (true=on)
 const int highLed = 1023;        // Max analog value
+int clicked[] = {0,0,0};         // Button click history
 
 
 //---- Wifi setup -----------------
@@ -233,8 +234,16 @@ void loop() {
   // Check button state
   button1.Update();
   if (button1.clicks != 0) {
-    snprintf (msg, 5, "%ld", button1.clicks);
-    Serial.print("Button: ");
+    // Save the last 3 button clicks
+    clicked[2] = clicked[1];
+    clicked[1] = clicked[0];
+    clicked[0] = button1.clicks;
+
+    snprintf (msg, 15, "Clicked:%ld", clicked[0]);
+    Serial.println(msg);
+    client.publish(mqttput, msg);
+
+    snprintf (msg, 15, "Last:%ld,%ld,%ld", clicked[0], clicked[1], clicked[2] );
     Serial.println(msg);
     client.publish(mqttput, msg);
   }
